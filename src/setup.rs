@@ -28,7 +28,8 @@ const SERVER_PROGRAM: &str = "kito-mcp";
 /// How long a hook may take, in seconds, before Codex goes on without it.
 const HOOK_TIMEOUT: u64 = 30;
 /// The hooks: the event, the tools it is for, the command, what Codex
-/// shows while it runs.
+/// shows while it runs. Codex 0.171 calls its shell tool `exec_command`,
+/// and its documentation matches it as `Bash`: both are named.
 const HOOKS: [(&str, Option<&str>, &str, &str); 3] = [
     (
         "PreToolUse",
@@ -38,7 +39,7 @@ const HOOKS: [(&str, Option<&str>, &str, &str); 3] = [
     ),
     (
         "PostToolUse",
-        Some("Bash"),
+        Some("Bash|exec_command|shell"),
         "kito hook after-shell",
         "Asking Kito what the command changed",
     ),

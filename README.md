@@ -63,11 +63,16 @@ ran.
 
 ## What is not tried
 
-The tests feed the hook what the Codex documentation says Codex sends,
-and run it under Kito itself; nothing here has been run under Codex
-(0.171 was current when this was written). Not confirmed against it:
-the name its shell tool is matched by (`Bash`), and whether it shows the
-model what the hooks after a command and at the start of a session
+Tried with Codex 0.171 itself, nobody signed in: in a project that is
+trusted it reads `.codex/config.toml` and starts `kito-mcp`, and the
+rules of `AGENTS.md` and Kito's tools are in what the model is given.
+
+Not tried, since it takes a session with a model: Codex running the
+hooks. The tests feed the hook what the Codex documentation says Codex
+sends before a patch, and run it under Kito itself. Not confirmed: which
+name its shell tool is matched by (it is `exec_command` to the model and
+`Bash` in the documentation: the hook names both), and whether it shows
+the model what the hooks after a command and at the start of a session
 answer.
 
 ## Development

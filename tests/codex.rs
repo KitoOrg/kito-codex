@@ -70,7 +70,10 @@ fn it_writes_what_codex_reads_and_takes_it_out_again() {
             "statusMessage": "Asking Kito about the edit",
         }]}])
     );
-    assert_eq!(hooks["hooks"]["PostToolUse"][0]["matcher"], "Bash");
+    assert_eq!(
+        hooks["hooks"]["PostToolUse"][0]["matcher"],
+        "Bash|exec_command|shell"
+    );
     assert_eq!(
         hooks["hooks"]["PostToolUse"][0]["hooks"][0]["command"],
         "kito hook after-shell"
@@ -265,7 +268,7 @@ fn codex_is_refused_the_patches_kito_refuses() {
         &["plugin", "add", "--path", source.to_str().unwrap()],
     );
     ok(&root, &["plugin", "enable", "codex"]);
-    assert!(ok(&root, &["assistant", "list"]).contains("codex  (plugin codex 0.1.0)"));
+    assert!(ok(&root, &["assistant", "list"]).contains("codex  (plugin codex 0.1.1)"));
     let set_up = ok(&root, &["assistant", "add", "codex"]);
     assert!(
         set_up.contains("Codex is set up for Kito") && set_up.contains("wrote AGENTS.md"),
