@@ -122,6 +122,15 @@ fn main() -> ExitCode {
             said(&root, done, "  nothing of it was there");
             Ok(())
         }),
+        // One last time, where the plugin is disabled (`[cleanup]`, Kito
+        // 0.23): what it wrote in the project comes out with it.
+        ["cleanup", "repository"] => repository().and_then(|root| {
+            for one in setup::remove(&root)? {
+                println!("{} {}", one.what, one.path.strip_prefix(&root).unwrap_or(&one.path).display());
+            }
+            Ok(())
+        }),
+        ["cleanup", _] => Ok(()),
         ["--version"] => {
             println!("kito-codex {}", env!("CARGO_PKG_VERSION"));
             Ok(())

@@ -292,7 +292,7 @@ fn codex_is_refused_the_patches_kito_refuses() {
         &["plugin", "add", "--path", source.to_str().unwrap()],
     );
     ok(&root, &["plugin", "enable", "codex"]);
-    assert!(ok(&root, &["assistant", "list"]).contains("codex  (plugin codex 0.1.2)"));
+    assert!(ok(&root, &["assistant", "list"]).contains("codex  (plugin codex 0.1.3)"));
     let set_up = ok(&root, &["assistant", "add", "codex"]);
     assert!(
         set_up.contains("Codex is set up for Kito") && set_up.contains("wrote AGENTS.md"),
@@ -397,5 +397,14 @@ fn codex_is_refused_the_patches_kito_refuses() {
     let removed = ok(&root, &["assistant", "remove", "codex"]);
     assert!(removed.contains("removed AGENTS.md"), "{removed}");
     assert!(!root.join(".codex").exists());
+
+    // Disabled, it takes out what it wrote without being asked to.
+    ok(&root, &["assistant", "add", "codex"]);
+    let disabled = ok(&root, &["plugin", "disable", "codex"]);
+    assert!(
+        disabled.contains("removed AGENTS.md") && disabled.contains("codex is disabled"),
+        "{disabled}"
+    );
+    assert!(!root.join(".codex").exists() && !root.join("AGENTS.md").exists());
     let _ = kito(&root, &["daemon", "stop"], None);
 }
