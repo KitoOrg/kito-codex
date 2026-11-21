@@ -149,6 +149,30 @@ fn what_the_project_says_itself_is_left_as_it_is() {
     assert_eq!(text(root.join(".codex/config.toml")), own_config);
     assert_eq!(text(root.join(".codex/hooks.json")), own_hooks);
 
+    // `AGENTS.md` is ZCode's too: rules another of Kito's plugins wrote are
+    // not written twice, and rules ZCode still needs are not taken out.
+    let theirs = "<!-- kito: begin (written by Kito for the assistants that read this file) -->
+## Version control: Kito
+<!-- kito: end -->
+";
+    std::fs::write(root.join("AGENTS.md"), theirs).unwrap();
+    std::fs::create_dir_all(root.join(".zcode")).unwrap();
+    std::fs::write(
+        root.join(".zcode/config.json"),
+        "{\"mcp\":{\"servers\":{\"kito\":{\"command\":\"kito-mcp\"}}}}",
+    )
+    .unwrap();
+    let (ok, said) = plugin(root, &["assistant", "setup"]);
+    assert!(
+        ok && !said.contains("changed AGENTS.md") && !said.contains("wrote AGENTS.md"),
+        "{said}"
+    );
+    let (ok, said) = plugin(root, &["assistant", "remove"]);
+    assert!(ok && !said.contains("AGENTS.md"), "{said}");
+    assert_eq!(text(root.join("AGENTS.md")), theirs);
+    std::fs::remove_dir_all(root.join(".zcode")).unwrap();
+    std::fs::remove_file(root.join("AGENTS.md")).unwrap();
+
     // A server called `kito` that is the project's own is not replaced, and not taken out.
     std::fs::write(
         root.join(".codex/config.toml"),
@@ -268,7 +292,7 @@ fn codex_is_refused_the_patches_kito_refuses() {
         &["plugin", "add", "--path", source.to_str().unwrap()],
     );
     ok(&root, &["plugin", "enable", "codex"]);
-    assert!(ok(&root, &["assistant", "list"]).contains("codex  (plugin codex 0.1.1)"));
+    assert!(ok(&root, &["assistant", "list"]).contains("codex  (plugin codex 0.1.2)"));
     let set_up = ok(&root, &["assistant", "add", "codex"]);
     assert!(
         set_up.contains("Codex is set up for Kito") && set_up.contains("wrote AGENTS.md"),

@@ -21,6 +21,9 @@ pub struct Done {
 
 const BEGIN: &str =
     "<!-- kito: begin (written by `kito assistant add codex`; edit outside these marks) -->";
+/// How the marks begin, whichever of Kito's plugins wrote them:
+/// `AGENTS.md` is read by more than one assistant.
+const MARK: &str = "<!-- kito: begin";
 const END: &str = "<!-- kito: end -->";
 /// The MCP server, as Codex names it and as it is started.
 const SERVER: &str = "kito";
@@ -159,7 +162,7 @@ fn write(path: &Path, was: Option<&str>, text: &str) -> Result<Option<Done>, Str
 
 /// `text` without the rules Kito put between its marks.
 fn without_rules(text: &str) -> String {
-    let (Some(from), Some(to)) = (text.find(BEGIN), text.find(END)) else {
+    let (Some(from), Some(to)) = (text.find(MARK), text.find(END)) else {
         return text.to_owned();
     };
     if to < from {
@@ -175,7 +178,19 @@ fn without_rules(text: &str) -> String {
 
 fn rules(path: &Path, wanted: bool) -> Result<Option<Done>, String> {
     let was = read(path)?;
-    let rest = without_rules(was.as_deref().unwrap_or_default());
+    let now = was.as_deref().unwrap_or_default();
+    // ZCode reads `AGENTS.md` too: rules another of Kito's plugins wrote
+    // are the same rules, and stay while that assistant is set up.
+    let theirs = now.contains(MARK) && !now.contains(BEGIN);
+    let zcode = path.with_file_name(".zcode").join("config.json");
+    let shared = read(&zcode)
+        .ok()
+        .flatten()
+        .is_some_and(|text| text.contains(SERVER_PROGRAM));
+    if (wanted && theirs) || (!wanted && shared) {
+        return Ok(None);
+    }
+    let rest = without_rules(now);
     let text = match wanted {
         false => rest,
         // After what the project says itself: the last word on version control here.

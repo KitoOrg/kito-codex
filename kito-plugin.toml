@@ -1,5 +1,5 @@
 name = "codex"
-version = "0.1.1"
+version = "0.1.2"
 description = "Codex, the coding assistant, set up to work through Kito"
 api = 1
 # It asks the daemon nothing itself: what Codex is about to edit is asked
