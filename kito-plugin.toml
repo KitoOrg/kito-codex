@@ -1,0 +1,14 @@
+name = "codex"
+version = "0.1.0"
+description = "Codex, the coding assistant, set up to work through Kito"
+api = 1
+# It asks the daemon nothing itself: what Codex is about to edit is asked
+# through `kito hook before-edit`, as the person who runs Codex.
+permissions = ["read"]
+
+[assistant]
+name = "codex"
+
+[[command]]
+name = "codex"
+about = "What Codex runs around its tools here: hook before-edit"
