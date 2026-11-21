@@ -292,7 +292,7 @@ fn codex_is_refused_the_patches_kito_refuses() {
         &["plugin", "add", "--path", source.to_str().unwrap()],
     );
     ok(&root, &["plugin", "enable", "codex"]);
-    assert!(ok(&root, &["assistant", "list"]).contains("codex  (plugin codex 0.1.4)"));
+    assert!(ok(&root, &["assistant", "list"]).contains("plugin codex, enabled here"));
     let set_up = ok(&root, &["assistant", "add", "codex"]);
     assert!(
         set_up.contains("Codex is set up for Kito") && set_up.contains("wrote AGENTS.md"),
