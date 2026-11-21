@@ -292,7 +292,7 @@ fn codex_is_refused_the_patches_kito_refuses() {
         &["plugin", "add", "--path", source.to_str().unwrap()],
     );
     ok(&root, &["plugin", "enable", "codex"]);
-    assert!(ok(&root, &["assistant", "list"]).contains("codex  (plugin codex 0.1.3)"));
+    assert!(ok(&root, &["assistant", "list"]).contains("codex  (plugin codex 0.1.4)"));
     let set_up = ok(&root, &["assistant", "add", "codex"]);
     assert!(
         set_up.contains("Codex is set up for Kito") && set_up.contains("wrote AGENTS.md"),
@@ -358,6 +358,26 @@ fn codex_is_refused_the_patches_kito_refuses() {
         out.status.success() && answer.is_null(),
         "{answer}{}",
         String::from_utf8_lossy(&out.stderr)
+    );
+    // The lane says who edits in it (Kito 0.25): Codex, and the model
+    // Codex gave the hook when it gives one.
+    let lanes: Value = serde_json::from_str(&ok(&root, &["--json", "lanes"])).unwrap();
+    assert_eq!(lanes[0]["assistant"], json!({ "name": "codex" }), "{lanes}");
+    let input = json!({
+        "hook_event_name": "PreToolUse", "cwd": work, "tool_name": "apply_patch",
+        "session_id": "session-1", "model": "gpt-5-codex", "tool_input": { "command": cheaper },
+    });
+    let out = kito(&work, &["codex", "hook", "before-edit"], Some(&input));
+    assert!(
+        out.status.success() && out.stdout.is_empty(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let lanes: Value = serde_json::from_str(&ok(&root, &["--json", "lanes"])).unwrap();
+    assert_eq!(
+        lanes[0]["assistant"],
+        json!({ "name": "codex", "model": "gpt-5-codex" }),
+        "{lanes}"
     );
 
     // In the lane, outside what it declared: one file of the patch is enough.

@@ -21,20 +21,40 @@ use std::process::{Command, ExitCode, Stdio};
 /// The repository, as Kito says it to its plugins.
 const ENV_REPO: &str = "KITO_REPO";
 
+/// What Codex gave the hook of itself: the model it runs, and its session.
+struct Said<'a> {
+    model: Option<&'a str>,
+    session: Option<&'a str>,
+}
+
 /// Asks Kito whether one edit may be made: `Ok(None)`, it may; `Ok(Some)`,
-/// it may not, and why; `Err`, nobody could be asked.
-fn may_edit(edit: &patch::Edit) -> Result<Option<String>, String> {
-    let mut command = Command::new("kito");
-    command
-        .args(["hook", "before-edit", "--file"])
-        .arg(&edit.file);
-    for (from, to) in &edit.lines {
-        command.arg("--lines").arg(format!("{from}-{to}"));
+/// it may not, and why; `Err`, nobody could be asked. Kito is told that
+/// Codex asks, and on what model: the lane the edit is in says it.
+fn may_edit(edit: &patch::Edit, said: &Said) -> Result<Option<String>, String> {
+    let asked = |who: bool| {
+        let mut command = Command::new("kito");
+        command
+            .args(["hook", "before-edit", "--file"])
+            .arg(&edit.file);
+        for (from, to) in &edit.lines {
+            command.arg("--lines").arg(format!("{from}-{to}"));
+        }
+        if who {
+            command.arg("--assistant=codex");
+            command.args(said.model.map(|model| format!("--model={model}")));
+            command.args(said.session.map(|session| format!("--session={session}")));
+        }
+        // Kito places the file by where it is, whatever directory this runs in.
+        command.stdin(Stdio::null()).output().map_err(|e| {
+            format!("`kito` could not be run ({e}): is it on the PATH Codex runs with?")
+        })
+    };
+    let mut out = asked(true)?;
+    // A Kito before 0.25 does not take who asks: it is asked as it was.
+    if out.status.code() == Some(2) && String::from_utf8_lossy(&out.stderr).contains("--assistant")
+    {
+        out = asked(false)?;
     }
-    // Kito places the file by where it is, whatever directory this runs in.
-    let out = command.stdin(Stdio::null()).output().map_err(|e| {
-        format!("`kito` could not be run ({e}): is it on the PATH Codex runs with?")
-    })?;
     let said = String::from_utf8_lossy(&out.stderr).trim().to_owned();
     match out.status.code() {
         Some(0) => Ok(None),
@@ -54,8 +74,13 @@ fn before_edit() -> ExitCode {
     let Some(patch) = patch::text_of(&input["tool_input"]) else {
         return ExitCode::SUCCESS;
     };
+    // Codex gives every hook the model it runs and its session.
+    let said = Said {
+        model: input["model"].as_str(),
+        session: input["session_id"].as_str(),
+    };
     for edit in patch::edits(&patch, &cwd, |file| std::fs::read_to_string(file).ok()) {
-        match may_edit(&edit) {
+        match may_edit(&edit, &said) {
             Ok(None) => {}
             // The whole patch is refused: Codex applies all of it or none.
             Ok(Some(why)) => {

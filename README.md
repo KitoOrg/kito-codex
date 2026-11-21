@@ -61,6 +61,10 @@ to, is asked about whole.
 What a shell command changes is not a patch, and is seen only after it
 ran.
 
+With each question Kito is told that Codex asks, and the model Codex
+gave the hook: from Kito 0.25 the lane says which assistant works in it
+(`kito lanes`, `kito board`). An older Kito is asked as before.
+
 ## What is not tried
 
 Tried with Codex 0.171 itself, nobody signed in: in a project that is
